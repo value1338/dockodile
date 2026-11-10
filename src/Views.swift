@@ -281,9 +281,23 @@ final class AddPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
 
-    /// A click anywhere else closes the list, as with a menu.
+    /// A click anywhere else closes the list, as with a menu. Losing key covers other apps; the monitors
+    /// cover Dockodile's own tab bars, which never take key and so would not close it.
     override func resignKey() {
         super.resignKey()
+        orderOut(nil)
+    }
+
+    private var monitors: [Any] = []
+
+    override func orderOut(_ sender: Any?) {
+        super.orderOut(sender)
+        monitors.forEach(NSEvent.removeMonitor)
+        monitors = []
+    }
+
+    func dismissOutside() {
+        guard isVisible, !frame.contains(NSEvent.mouseLocation) else { return }
         orderOut(nil)
     }
 
@@ -292,12 +306,29 @@ final class AddPanel: NSPanel {
         contentView = NSHostingView(rootView: AddList(model: model))
         model.start(group)
         makeKeyAndOrderFront(nil)
+        guard monitors.isEmpty else { return }
+        let clicks: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown]
+        if let local = NSEvent.addLocalMonitorForEvents(matching: clicks, handler: { event in
+            DispatchQueue.main.async { AddPanel.shared.dismissOutside() }
+            return event
+        }) { monitors.append(local) }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: clicks, handler: { _ in
+            DispatchQueue.main.async { AddPanel.shared.dismissOutside() }
+        }) { monitors.append(global) }
     }
 
     /// Grows downwards from where the plus was clicked.
     func fit() {
         let height = model.height
-        setFrame(NSRect(x: anchor.x, y: anchor.y - height, width: 400, height: height), display: true)
+        let width: CGFloat = 400
+        // Below the pointer, and pushed back inside when the plus sits near a screen edge.
+        var x = anchor.x
+        var y = anchor.y - 12 - height
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(anchor) })?.visibleFrame ?? NSScreen.main?.visibleFrame {
+            x = max(screen.minX + 8, min(x, screen.maxX - width - 8))
+            y = max(screen.minY + 8, min(y, screen.maxY - height - 8))
+        }
+        setFrame(NSRect(x: x, y: y, width: width, height: height), display: true)
     }
 }
 

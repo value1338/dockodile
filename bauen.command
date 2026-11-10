@@ -3,6 +3,12 @@
 # Beim ersten Mal bietet das Skript an, ein eigenes Signaturzertifikat anzulegen.
 cd "$(dirname "$0")"
 mkdir -p .build
+# The Swift module cache remembers the folder it was made in. After the project folder was moved
+# or renamed it only produces errors, so it is thrown away and built anew.
+if [[ "$(cat .build/ort 2>/dev/null)" != "$PWD" ]]; then
+  find .build -mindepth 1 -maxdepth 1 ! -name ohne-signatur -exec rm -rf {} +
+  pwd > .build/ort
+fi
 
 # --- Signatur -------------------------------------------------------------------------------
 # macOS merkt sich den Bedienungshilfen-Zugriff anhand der Signatur. Ohne festes Zertifikat

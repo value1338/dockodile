@@ -40,14 +40,20 @@ Die Tab-Leiste ist für Bedienungshilfen ausgezeichnet. Jeder Tab ist ein benann
 
 Frühe Version 0.1. Dockodile ist bisher auf einem einzigen Mac im Alltag erprobt. Programme verhalten sich beim Bewegen ihrer Fenster unterschiedlich, es wird Ecken geben, die noch haken. Fehlerberichte mit Programmname und macOS-Version helfen am meisten.
 
-Es gibt noch keinen fertigen Download. Dockodile wird aus dem Quelltext gebaut.
+## Fertig signiert kaufen
 
-## Voraussetzungen
+Die fertige App kommt als DMG, signiert und von Apple notarisiert. Sie startet ohne Warnung, Installieren heißt: in den Ordner Programme ziehen. Der Preis deckt den Apple-Developer-Account, ohne den es keine signierte App gibt.
+
+**[Dockodile kaufen](LINK-FOLGT)** (bald verfügbar)
+
+## Kostenlos selbst bauen
+
+Der Quelltext ist frei. Wer will, baut Dockodile selbst, das kostet nichts und kann alles, was die gekaufte Version kann.
+
+Voraussetzungen:
 
 - macOS 14 oder neuer
 - Xcode oder die Xcode Command Line Tools (`xcode-select --install`)
-
-## Installieren
 
 ```sh
 git clone https://github.com/value1338/dockodile.git
@@ -142,4 +148,6 @@ Automatische Tests gibt es nicht. Das Verhalten hängt an fremden Programmen und
 
 ## Lizenz
 
-Noch nicht festgelegt.
+Der Quelltext steht unter der [GNU General Public License 3.0](LICENSE). Du darfst ihn nutzen, verändern und weitergeben, auch verkaufen. Wer eine veränderte Fassung weitergibt, muss deren Quelltext ebenfalls unter der GPL-3.0 offenlegen.
+
+Der Name „Dockodile“ und das Krokodil-Logo gehören nicht zur Lizenz. Veränderte Fassungen brauchen einen eigenen Namen und ein eigenes Icon.

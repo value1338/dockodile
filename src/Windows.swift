@@ -41,6 +41,16 @@ extension AXUIElement {
 
     var title: String { raw(kAXTitleAttribute) as? String ?? "" }
     var isStandardWindow: Bool { raw(kAXSubroleAttribute) as? String == kAXStandardWindowSubrole }
+    /// True only when the window really no longer exists. An app that is busy, such as one that is
+    /// still starting, fails to answer for a moment; that is not the same as its window being gone.
+    var isGone: Bool {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(self, kAXRoleAttribute as CFString, &value)
+        if result == .success { return false }
+        if result == .invalidUIElement { return true }
+        guard let owner = pid, let app = NSRunningApplication(processIdentifier: owner) else { return true }
+        return app.isTerminated
+    }
     var isMinimized: Bool { raw(kAXMinimizedAttribute) as? Bool ?? false }
     var windows: [AXUIElement] { raw(kAXWindowsAttribute) as? [AXUIElement] ?? [] }
     var children: [AXUIElement] { raw(kAXChildrenAttribute) as? [AXUIElement] ?? [] }

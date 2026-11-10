@@ -83,6 +83,8 @@ struct Ghost: Identifiable, Equatable {
 final class TabGroup: ObservableObject {
     @Published var members: [Member]
     @Published var active: Int
+    /// True while the hidden tabs wait off screen, which they only do while the group is moved or resized.
+    var parked = false
     /// Apps of the package that are still starting, shown as pulsing tabs.
     @Published var starting: [Ghost] = []
     /// Bar and window together, in accessibility coordinates.
@@ -238,9 +240,12 @@ final class Hub {
 
     // MARK: Parking hidden tabs
 
-    /// Hidden tabs wait just outside the picture: at the bottom right corner of the rightmost screen, with
-    /// one point still showing, because macOS keeps no window entirely off screen. A group therefore has a
-    /// single window to move, and nothing can be left standing behind it or peek out from under it.
+    /// Hidden tabs lie behind the visible one, at the same frame. Only while the group is moved or resized
+    /// do they wait just outside the picture: at the bottom right corner of the rightmost screen, with one
+    /// point still showing, because macOS keeps no window entirely off screen. The group then has a single
+    /// window to move and nothing is left standing behind it.
+    /// They must not stay out there: Mission Control shrinks every window to a speck as soon as some
+    /// windows sit almost entirely off screen.
     private var parkPoint: CGPoint {
         let screen = NSScreen.screens.max { $0.frame.maxX < $1.frame.maxX }
         let frame = flipped(screen?.frame ?? .zero)
@@ -254,9 +259,19 @@ final class Hub {
     }
 
     private func park(_ group: TabGroup) {
+        guard !group.parked else { return }
+        group.parked = true
         let point = parkPoint
         for (index, member) in group.members.enumerated() where index != group.active {
-            if !isParked(member.window) { member.window.setPosition(point) }
+            member.window.setPosition(point)
+        }
+    }
+
+    /// Back behind the visible window, once the group has come to rest.
+    private func stack(_ group: TabGroup) {
+        group.parked = false
+        for (index, member) in group.members.enumerated() where index != group.active {
+            if member.window.frame != group.content { member.window.setFrame(group.content) }
         }
     }
 
@@ -286,6 +301,8 @@ final class Hub {
         }
         group.panel.orderOut(nil)
         groups.removeAll { $0 === group }
+        // Whatever was still starting for this group must not build it anew.
+        opening = opening.filter { $0.value.home !== group }
     }
 
     /// The X at the end of the bar: asks whether to only dissolve the group or to quit its apps as well.
@@ -449,7 +466,7 @@ final class Hub {
         member.window.setFrame(group.content)
         member.window.focus()
         placeBar(group)
-        park(group)
+        stack(group)
     }
 
     func move(_ group: TabGroup, from: Int, to: Int) {
@@ -481,8 +498,11 @@ final class Hub {
                 last.window.setFrame(group.frame)
             }
             group.members = []
+            group.starting = []
             group.panel.orderOut(nil)
             groups.removeAll { $0 === group }
+            // Whatever was still starting for this group must not build it anew.
+            opening = opening.filter { $0.value.home !== group }
             return
         }
         let next = group.members.firstIndex { $0.id == activeID } ?? min(index, group.members.count - 1)
@@ -505,6 +525,7 @@ final class Hub {
             group.frame = full
         }
         group.moving = true
+        park(group)
         if group.members.indices.contains(group.active) {
             group.members[group.active].window.setFrame(group.content)
         }
@@ -572,6 +593,7 @@ final class Hub {
         if barDrag == nil {
             barDrag = (mouse, group.frame)
             group.moving = true
+            park(group)
         }
         guard let start = barDrag else { return }
         var y = start.frame.minY - (mouse.y - start.mouse.y)
@@ -602,6 +624,7 @@ final class Hub {
         if barResize == nil {
             barResize = (mouse, group.frame)
             group.moving = true
+            park(group)
         }
         guard let start = barResize else { return }
         let minWidth: CGFloat = 360
@@ -656,7 +679,7 @@ final class Hub {
                 }
                 group.members[group.active].window.setFrame(group.content)
                 Hub.shared.placeBar(group)
-                Hub.shared.park(group)
+                Hub.shared.stack(group)
             }
         }
     }
@@ -673,7 +696,10 @@ final class Hub {
         }
         placeBar(group)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            DispatchQueue.main.async { group.moving = false }
+            DispatchQueue.main.async {
+                group.moving = false
+                if Hub.shared.groups.contains(where: { $0 === group }) { Hub.shared.stack(group) }
+            }
         }
     }
 
@@ -716,12 +742,15 @@ final class Hub {
                         // Same size, new place: a title bar drag. From here the pointer drives the group.
                         ownDrag?.moving = true
                         group.moving = true
+                        park(group)
                     } else {
                         ownDrag = nil
                     }
                 }
             } else if !group.moving, index == group.active, let content = element.frame, content != group.content {
-                // The user moved or resized the visible window: the bar follows.
+                // The user moved or resized the visible window: the bar follows. The hidden tabs get out
+                // of the way until the mouse is released, so none peeks out from behind a smaller window.
+                if NSEvent.pressedMouseButtons != 0 { park(group) }
                 group.frame = CGRect(x: content.minX, y: content.minY - barHeight, width: content.width,
                                      height: content.height + barHeight)
                 placeBar(group)
@@ -790,6 +819,11 @@ final class Hub {
         var home: TabGroup?
         /// A single app added through the plus: it goes to the end and the tab order stays as it is.
         var append = false
+        /// Steps in a row with every window in place. Starting apps swap or drop windows for a moment.
+        var settled = 0
+        /// Apps whose only windows are tabs of this very group already or belong to a package that is
+        /// opening right now. A window exists once, so these are left out.
+        var skipped = Set<Int>()
     }
     /// One entry per package that is being opened, by package name. Packages open independently of each
     /// other; a second call for the same package while it is still starting does nothing.
@@ -835,20 +869,48 @@ final class Hub {
     private func openStep(_ name: String) {
         guard var state = opening[name] else { return }
         // Windows another package has already picked are off limits as well.
+        if state.home != nil {
+            // A window that joined and fell out again while its app was still starting is looked for anew.
+            for index in state.found.indices {
+                if let member = state.found[index], group(of: member.id) == nil { state.found[index] = nil }
+            }
+            opening[name] = state
+        }
         var taken = Set(opening.values.flatMap { $0.found.compactMap { $0?.id } })
-        for (index, entry) in state.package.apps.enumerated() where state.found[index] == nil {
+        for (index, entry) in state.package.apps.enumerated()
+        where state.found[index] == nil && !state.skipped.contains(index) {
             var free: [AXUIElement] = []
+            // Windows that are tabs of another group. The saved package leads: it takes them over.
+            var borrowed: [AXUIElement] = []
+            var elsewhere = false
             for app in NSRunningApplication.runningApplications(withBundleIdentifier: entry.bundleID) {
-                free += AXUIElementCreateApplication(app.processIdentifier).windows.filter { window in
-                    guard let id = window.windowID else { return false }
-                    return window.isStandardWindow && !taken.contains(id) && self.group(of: id) == nil
+                let element = AXUIElementCreateApplication(app.processIdentifier)
+                // An app that is still starting does not answer; do not wait for it and freeze the bar.
+                AXUIElementSetMessagingTimeout(element, 0.3)
+                for window in element.windows {
+                    guard let id = window.windowID, window.isStandardWindow else { continue }
+                    let owner = group(of: id)
+                    if taken.contains(id) || (owner != nil && owner === state.home) {
+                        elsewhere = true
+                    } else if owner != nil {
+                        borrowed.append(window)
+                    } else {
+                        free.append(window)
+                    }
                 }
             }
             // The window with the remembered title first, otherwise any free one of that app.
             let match = free.first { !entry.title.isEmpty && $0.title == entry.title } ?? free.first
+                ?? borrowed.first { !entry.title.isEmpty && $0.title == entry.title } ?? borrowed.first
             if let match, let member = Member(match) {
+                if let owner = group(of: member.id), let at = owner.members.firstIndex(where: { $0.id == member.id }) {
+                    remove(owner, at)
+                }
                 state.found[index] = member
                 taken.insert(member.id)
+            } else if elsewhere {
+                // Running, and every window it has is taken. Opening the app again would give no new window.
+                state.skipped.insert(index)
             } else if !state.launched.contains(entry.bundleID) {
                 // Not running, or running without a window: opening the app gives us one.
                 state.launched.insert(entry.bundleID)
@@ -857,9 +919,11 @@ final class Hub {
             }
         }
         state.tries += 1
-        let complete = !state.found.contains { $0 == nil }
+        let complete = !state.found.indices.contains { state.found[$0] == nil && !state.skipped.contains($0) }
         // ponytail: fixed wait of thirty seconds for slow starters; whatever is there by then gets grouped.
-        let done = complete || state.tries >= 60
+        state.settled = complete ? state.settled + 1 : 0
+        // Complete means: everything has been in place for three seconds.
+        let done = state.settled >= 6 || state.tries >= 60
         if state.home.map({ home in !groups.contains { $0 === home } }) ?? true {
             // No group yet: build it as soon as two windows are there, the rest shows as starting.
             let free = state.found.compactMap { $0 }.filter { group(of: $0.id) == nil }
@@ -899,7 +963,7 @@ final class Hub {
         for (index, entry) in state.package.apps.enumerated() {
             if let member = state.found[index] {
                 if home.members.contains(where: { $0.id == member.id }) { before += 1 }
-            } else {
+            } else if !state.skipped.contains(index) {
                 let name = FileManager.default.displayName(atPath: entry.path).replacingOccurrences(of: ".app", with: "")
                 ghosts.append(Ghost(id: index, at: state.append ? home.members.count : before, name: name, path: entry.path))
             }
@@ -1030,7 +1094,7 @@ final class Hub {
         }
         for group in groups {
             // Windows that vanished without a notification.
-            while let gone = group.members.firstIndex(where: { $0.window.frame == nil }) {
+            while let gone = group.members.firstIndex(where: { $0.window.isGone }) {
                 if let next = sibling(of: group.members[gone], in: group), replace(group, gone, with: next) {
                     continue
                 }
@@ -1056,7 +1120,7 @@ final class Hub {
                 group.frame = CGRect(x: actual.minX, y: actual.minY - barHeight, width: actual.width,
                                      height: actual.height + barHeight)
             }
-            park(group)
+            stack(group)
             placeBar(group)
         }
         syncFocus()

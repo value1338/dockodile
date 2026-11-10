@@ -7,3 +7,5 @@ build.log
 # Riccardos lokales Einrichtungsskript, in bauen.command aufgegangen
 signatur-einrichten.command
 AGENTS.md
+release/
+release.log
