@@ -119,7 +119,7 @@ Daraus folgt:
 
 ## Warum nicht im Mac App Store
 
-Der Mac App Store verlangt die App Sandbox, und eine App in der Sandbox darf fremde Fenster nicht steuern. Apples Entwickler-Support empfiehlt für solche Werkzeuge die direkte Verteilung. Dockodile nutzt außerdem die nicht dokumentierte Systemfunktion `_AXUIElementGetWindow`, um Fenster eindeutig zu erkennen. Sie ist seit vielen macOS-Versionen stabil und in Fenster-Werkzeugen verbreitet, kann sich mit einem Update aber ändern.
+Der Mac App Store verlangt die App Sandbox, und eine App in der Sandbox darf fremde Fenster nicht steuern. Apples Entwickler-Support empfiehlt für solche Werkzeuge die direkte Verteilung. Um Fenster eindeutig zu erkennen, nutzt Dockodile außerdem eine macOS-Funktion, die Apple nicht offiziell für Entwickler freigegeben hat (`_AXUIElementGetWindow`). Sie ist seit vielen macOS-Versionen unverändert und in Fenster-Werkzeugen üblich. Sollte Apple sie ändern, braucht Dockodile ein Update.
 
 ## Entwicklung
 
@@ -132,7 +132,6 @@ Dockodile ist in Swift geschrieben, mit AppKit, SwiftUI und der Accessibility-AP
 | `src/Views.swift` | Tab-Leiste, Plus-Menü, Hinweis beim Ziehen, Fenster für Anleitung und Kürzel |
 | `src/App.swift` | Einstieg, Menüleiste, Autostart, Tastenkürzel |
 | `Icon/` | App-Symbol, Logo für das Willkommensfenster und das Symbol für die Menüleiste |
-| `AGENTS.md` | Ausführliche Notizen zu Aufbau, Fallstricken und offenem Stand |
 
 Die Signatur wählt `bauen.command` in dieser Reihenfolge: die Umgebungsvariable `DOCKODILE_SIGN`, sonst das lokale Zertifikat „Dockodile Lokal“, sonst eine Wegwerf-Signatur. Welche es wurde, steht als Zeile „signiert mit“ in `build.log`.
 
