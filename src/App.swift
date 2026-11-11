@@ -71,10 +71,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 DispatchQueue.main.async { self.checkAccess() }
             }
         }
+        Updater.shared.start()
     }
 
     /// Control without clicking, for agents, Raycast and Shortcuts:
     /// `dockodile://open?paket=Name` opens a package, `dockodile://tab?app=Mail` shows a tab.
+    /// `dockodile://activate?token=…` comes from the purchase page and unlocks updates.
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls where url.scheme == "dockodile" {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -86,6 +88,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 done = true
             } else if url.host == "tab", let name = value("app", "name"), !name.isEmpty {
                 done = Hub.shared.showTab(name)
+            } else if url.host == "activate", let token = value("token") {
+                done = Updater.shared.activate(token)
             }
             if !done { NSSound.beep() }
         }
@@ -198,6 +202,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         language.submenu = languages
         add(t("Beim Anmelden starten", "Start at login"), #selector(toggleLogin), in: menu).state =
             SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.addItem(.separator())
+        add("Dockodile " + Updater.shared.current, nil, in: menu)
+        if let version = Updater.shared.available {
+            add(t("Update auf \(version) installieren …", "Install update \(version) …"), #selector(installUpdate), in: menu)
+        }
+        add(t("Nach Updates suchen …", "Check for updates …"), #selector(checkUpdates), in: menu)
+        add(t("Automatisch aktualisieren", "Update automatically"), #selector(toggleUpdates), in: menu).state =
+            Updater.shared.automatic ? .on : .off
+        if !Updater.shared.activated {
+            add(t("Updates freischalten …", "Unlock updates …"), #selector(openUpdatePage), in: menu)
+        }
         menu.addItem(.separator())
         add(t("Dockodile beenden", "Quit Dockodile"), #selector(quit), in: menu)
     }
@@ -324,6 +339,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func dissolve() {
         Hub.shared.dissolveAll()
+    }
+
+    // MARK: Updates
+
+    @objc private func installUpdate() {
+        Updater.shared.offer()
+    }
+
+    @objc private func checkUpdates() {
+        Updater.shared.check(manual: true)
+    }
+
+    @objc private func toggleUpdates() {
+        Updater.shared.automatic = !Updater.shared.automatic
+    }
+
+    @objc private func openUpdatePage() {
+        NSWorkspace.shared.open(Updater.page)
     }
 
     @objc private func quit() {

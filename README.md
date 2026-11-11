@@ -38,13 +38,13 @@ Die Tab-Leiste ist für Bedienungshilfen ausgezeichnet. Jeder Tab ist ein benann
 
 ## Status
 
-Frühe Version 0.1. Dockodile ist bisher auf einem einzigen Mac im Alltag erprobt. Programme verhalten sich beim Bewegen ihrer Fenster unterschiedlich, es wird Ecken geben, die noch haken. Fehlerberichte mit Programmname und macOS-Version helfen am meisten.
+Frühe Version 0.2. Dockodile ist bisher auf einem einzigen Mac im Alltag erprobt. Programme verhalten sich beim Bewegen ihrer Fenster unterschiedlich, es wird Ecken geben, die noch haken. Fehlerberichte mit Programmname und macOS-Version helfen am meisten.
 
 ## Fertig signiert kaufen
 
 Die fertige App kommt als DMG, signiert und von Apple notarisiert. Sie startet ohne Warnung, Installieren heißt: in den Ordner Programme ziehen. Der Preis deckt den Apple-Developer-Account, ohne den es keine signierte App gibt.
 
-**[Dockodile kaufen](LINK-FOLGT)** (bald verfügbar)
+**[Dockodile kaufen](https://dockodile.de)**
 
 ## Kostenlos selbst bauen
 
@@ -101,7 +101,7 @@ macOS zeigt einer App keine vollständige Liste der Kürzel anderer Programme. �
 ## Berechtigungen und Daten
 
 - **Bedienungshilfen.** Ohne diesen Zugriff darf keine App fremde Fenster bewegen. Dockodile nutzt ihn ausschließlich dafür: Fenster finden, verschieben, in der Größe ändern, nach vorn holen.
-- **Kein Netzwerk.** Dockodile verbindet sich mit keinem Server und sendet nichts.
+- **Netzwerk nur für Updates.** Dockodile fragt beim Start und einmal am Tag bei dockodile.de nach der neuesten Versionsnummer, ohne Kennung. „Automatisch aktualisieren“ im Menü schaltet das ab. Wer gekauft hat, schaltet mit dem Link von [dockodile.de/update.html](https://dockodile.de/update.html) die Installation direkt in der App frei; dann sendet die App beim Laden einer neuen Version den Schlüssel des Kaufs. Fenster, Programme und Pakete verlassen den Mac nicht.
 - **Gespeichert wird lokal.** Pakete liegen in den Einstellungen der App auf deinem Mac: Programmkennung, Programmpfad, Fenstertitel zum Wiedererkennen und der Rahmen der Gruppe.
 
 ## Wie es funktioniert und wo die Grenzen liegen

@@ -58,6 +58,12 @@ CFG
 }
 
 identity=${DOCKODILE_SIGN:-}
+# A Developer ID comes first: the released app is signed with it too, and macOS then keeps one
+# Accessibility grant for both the daily build and the released app.
+if [[ -z $identity ]]; then
+  identity=$(security find-identity -v -p codesigning 2>/dev/null |
+    sed -n 's/.*"\(Developer ID Application: .*\)"$/\1/p' | head -1)
+fi
 if [[ -z $identity ]]; then
   if valid "$own"; then
     identity=$own
