@@ -39,7 +39,7 @@ Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser
 - **Gruppe bewegen und skalieren.** Am freien Teil der Tab-Leiste ziehen oder am Fenster selbst. Die beiden oberen Ecken der Tab-Leiste ändern die Größe der Gruppe. Ein Doppelklick auf die Leiste füllt den Bildschirm, ein zweiter stellt die alte Größe wieder her.
 - **Pakete.** Eine Gruppe lässt sich unter einem Namen sichern. Ein Klick oder ein Tastenkürzel startet die Programme und setzt sie wieder zusammen, am gemerkten Platz.
 - **Frei wählbare Kürzel.** Jedes Paket bekommt ein eigenes, systemweites Kürzel. Dockodile lehnt Kombinationen ab, die schon vergeben sind.
-- **Sicher bei wechselnden Bildschirmen.** Ist der Monitor von damals nicht mehr angeschlossen, öffnet sich ein Paket sichtbar auf dem Hauptbildschirm.
+- **Bildschirm und Position merken.** Neu gesicherte Pakete behalten ihren Bildschirm und die Position darauf, auch wenn die Monitore anders angeordnet werden. Fehlt der Bildschirm, öffnet sich das Paket sichtbar auf dem aktiven Bildschirm. Ältere Pakete bleiben lesbar; zum Merken des Bildschirms einmal erneut sichern.
 - **Autostart.** Ein Schalter im Menü startet Dockodile beim Anmelden.
 
 Auf dem Mac läuft Dockodile als Symbol in der Menüleiste und hat kein Dock-Symbol. Die Windows-Ausgabe läuft im Infobereich der Taskleiste. Ihre Bedienung und Grenzen stehen in [windows/ANLEITUNG.md](windows/ANLEITUNG.md). Die Oberfläche gibt es auf Deutsch und Englisch. Die Sprache wählst du beim ersten Start oder später im Menü unter „Sprache“.
@@ -57,7 +57,7 @@ Der bisherige Preis von 7 € unterstützt den Apple-Developer-Account sowie lau
 
 **[Beta-Zugang auf dockodile.de anfragen](https://dockodile.de/#preis)**
 
-Aktueller Quellstand: **Mac 0.3.1 (Build 4)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
+Aktueller Quellstand: **Mac 0.3.2 (Build 5)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
 
 ### Mac kostenlos selbst bauen
 

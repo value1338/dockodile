@@ -385,7 +385,9 @@ func savePackage(of group: TabGroup) {
 
     let alert = NSAlert()
     alert.messageText = t("Gruppe als Paket sichern", "Save group as package")
-    alert.informativeText = t("Enthält ", "Contains ") + names.joined(separator: ", ") + "."
+    alert.informativeText = t("Enthält ", "Contains ") + names.joined(separator: ", ") + ".\n\n" +
+        t("Dockodile merkt sich beim Sichern den Bildschirm und die Position der Gruppe darauf. Fehlt der Bildschirm später, öffnet sich die Gruppe auf dem aktiven Bildschirm.",
+          "Dockodile saves the display and the group's position on it. If that display is disconnected, the group opens on the active display.")
     let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
     field.placeholderString = t("Name für das neue Paket", "Name for the new package")
     let popup = NSPopUpButton(frame: NSRect(x: 0, y: 34, width: 300, height: 26))
@@ -418,20 +420,22 @@ func savePackage(of group: TabGroup) {
     let answer = withExtendedLifetime(choice) { alert.runModal() }
     guard answer == .alertFirstButtonReturn else { return }
 
+    let frame = group.frame
+    let position = Hub.shared.packagePosition(for: frame)
     let picked = packages.isEmpty ? 0 : popup.indexOfSelectedItem
     if picked > 0 {
         // Same name, same shortcut, same place in the menu. Only apps and position are replaced.
         let old = packages[picked - 1]
-        packages[picked - 1] = Package(name: old.name, apps: apps, frame: group.frame, hotKey: old.hotKey)
+        packages[picked - 1] = Package(name: old.name, apps: apps, frame: frame, hotKey: old.hotKey, position: position)
         group.package = old.name
     } else {
         let name = field.stringValue.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
         if let same = packages.firstIndex(where: { $0.name == name }) {
-            packages[same] = Package(name: name, apps: apps, frame: group.frame, hotKey: packages[same].hotKey)
+            packages[same] = Package(name: name, apps: apps, frame: frame, hotKey: packages[same].hotKey, position: position)
         } else {
-            packages.append(Package(name: name, apps: apps, frame: group.frame,
-                                    hotKey: HotKeys.shared.suggestion(for: name)))
+            packages.append(Package(name: name, apps: apps, frame: frame,
+                                    hotKey: HotKeys.shared.suggestion(for: name), position: position))
         }
         group.package = name
     }

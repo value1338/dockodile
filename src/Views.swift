@@ -744,6 +744,9 @@ struct Welcome: View {
                       systemImage: "hand.tap")
                 Label(t("Zieh einen Tab nach unten heraus oder klick auf das Kreuz, um ein Fenster zu lösen.", "Pull a tab down and out, or click its cross, to release a window."),
                       systemImage: "arrow.up.forward.square")
+                Label(t("Sichere die Gruppe über das Plus als Paket. Beim Öffnen erscheint sie an der gespeicherten Position auf demselben Bildschirm. Ist der Bildschirm nicht angeschlossen, öffnet sich die Gruppe auf dem aktiven Bildschirm.",
+                        "Use the plus button to save the group as a package. When reopened, it appears in its saved position on the same display. If that display is disconnected, the group opens on the active display."),
+                      systemImage: "display.2")
             }
             .font(.callout)
             .fixedSize(horizontal: false, vertical: true)

@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import ColorSync
 import SwiftUI
 
 let barHeight: CGFloat = 36
@@ -33,6 +34,7 @@ struct Package: Codable {
     /// Where the group sat when it was saved: bar and window together, in accessibility coordinates.
     var frame: CGRect?
     var hotKey: HotKey?
+    var position: PackagePosition? = nil
 
     static func load() -> [Package] {
         guard let data = UserDefaults.standard.data(forKey: "packages"),
@@ -986,29 +988,17 @@ final class Hub {
         if joined { activate(home, index) } else if home.active != index { home.active = index }
     }
 
-    /// A frame that is certain to be visible. The wanted place is kept when its screen is still connected,
-    /// and pushed back inside if it reaches over the edge. Without that screen the group opens in the
-    /// middle of the main one, never larger than what the screen shows.
-    func visible(_ wanted: CGRect) -> CGRect {
-        let screens = NSScreen.screens.map { flipped($0.visibleFrame) }
-        func overlap(_ screen: CGRect) -> CGFloat {
-            let shared = screen.intersection(wanted)
-            return shared.isNull ? 0 : shared.width * shared.height
+    private var packageDisplays: [PackageDisplay] {
+        NSScreen.screens.map { screen in
+            let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+            let id = number.flatMap { CGDisplayCreateUUIDFromDisplayID($0.uint32Value)?.takeRetainedValue() }
+                .map { CFUUIDCreateString(nil, $0) as String }
+            return PackageDisplay(id: id, visibleFrame: flipped(screen.visibleFrame))
         }
-        let best = screens.max { overlap($0) < overlap($1) }
-        let fallback = NSScreen.main.map { flipped($0.visibleFrame) } ?? screens.first
-        guard let home = fallback else { return wanted }
-        let known = best.map { overlap($0) >= 0.3 * wanted.width * wanted.height } ?? false
-        let screen = known ? (best ?? home) : home
-        let size = CGSize(width: min(max(wanted.width, 320), screen.width),
-                          height: min(max(wanted.height, 240), screen.height))
-        if !known {
-            return CGRect(x: screen.midX - size.width / 2, y: screen.midY - size.height / 2,
-                          width: size.width, height: size.height)
-        }
-        return CGRect(x: min(max(wanted.minX, screen.minX), screen.maxX - size.width),
-                      y: min(max(wanted.minY, screen.minY), screen.maxY - size.height),
-                      width: size.width, height: size.height)
+    }
+
+    func packagePosition(for frame: CGRect) -> PackagePosition? {
+        PackagePosition.capture(frame, on: packageDisplays)
     }
 
     private func assemble(_ members: [Member], of package: Package) {
@@ -1016,7 +1006,8 @@ final class Hub {
             NSSound.beep()
             return
         }
-        let frame = visible(package.frame ?? current)
+        let frame = PackagePosition.restore(package.frame ?? current, position: package.position,
+                                            on: packageDisplays, fallback: NSScreen.main.map { flipped($0.visibleFrame) })
         join(members[1], .window(members[0].window, frame))
         guard let group = group(of: members[0].id) else { return }
         group.package = package.name

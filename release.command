@@ -9,7 +9,7 @@ done
 version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Info.plist)
 build=$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' Info.plist)
 identifier=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' Info.plist)
-[[ $version == 0.3.1 && $build == 4 && $identifier == de.lakecode.dockodile ]] || { echo 'Unerwartete Version/Bundle-ID. Export abgebrochen.' >&2; exit 2; }
+[[ $version == 0.3.2 && $build == 5 && $identifier == de.lakecode.dockodile ]] || { echo 'Unerwartete Version/Bundle-ID. Export abgebrochen.' >&2; exit 2; }
 profile=${DOCKODILE_NOTARY:-dockodile-notary}
 expected_team=9Q5D64SJUN
 identity=${DOCKODILE_SIGN:-}
@@ -43,8 +43,11 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp Info.plist "$app/Contents/Info.plist"
 cp Icon/Dockodile.icns "$app/Contents/Resources/AppIcon.icns"
 cp Icon/MenuBar.png Icon/MenuBar@2x.png Icon/Logo.png Icon/Logo@2x.png "$app/Contents/Resources/"
-shasum -a 256 Info.plist src/*.swift Icon/*.png Icon/*.icns release.command > "$out/SOURCE-SHA256SUMS.txt"
+shasum -a 256 Info.plist src/*.swift Icon/*.png Icon/*.icns tests/test_package_position.swift tests/test_update_swap.py release.command > "$out/SOURCE-SHA256SUMS.txt"
 python3 tests/test_update_swap.py
+xcrun --sdk macosx swiftc -module-cache-path "$work/cache-position-test" -parse-as-library \
+  src/PackagePosition.swift tests/test_package_position.swift -o "$work/test-package-position"
+"$work/test-package-position"
 for arch in arm64 x86_64; do
   xcrun --sdk macosx swiftc -swift-version 5 -O -target "$arch-apple-macos14.0" \
     -module-cache-path "$work/cache-$arch" src/*.swift -o "$work/Dockodile-$arch"
@@ -110,6 +113,7 @@ Developer-ID-Team $expected_team, Hardened Runtime, Zeitstempel, Signaturprüfun
 App und DMG von Apple mit Accepted bestätigt, Tickets angeheftet und validiert.
 Gatekeeper und tatsächlicher DMG-Inhalt auf Version, Build, Bundle-ID, Signatur und beide Architekturen geprüft.
 Vier isolierte Austausch-Helper-Tests bestanden; keine installierte Nutzer-App verändert.
+Die Bildschirmposition wurde mit simulierten Monitoranordnungen getestet (Wiederherstellen, Umordnen, Abstecken, kleinerer Bildschirm und alte Koordinaten).
 Nicht automatisch geprüft: vollständiges GUI-Verhalten, Accessibility-Gruppierung und kompletter In-App-Updateablauf auf einem echten Mac; Intel-Laufzeit ebenfalls separat prüfen.
 Kein Upload nach Netcup, kein Einschalten des Verkaufs.
 REPORT
