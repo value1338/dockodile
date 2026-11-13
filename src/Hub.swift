@@ -367,7 +367,7 @@ final class Hub {
             current.moving = true
             drag = current
         }
-        if let target = target(at: flipped(NSEvent.mouseLocation), excluding: current.id) {
+        if let target = target(at: flipped(NSEvent.mouseLocation), excluding: current.id, from: current.window.pid) {
             hint.show(over: target.strip)
         } else {
             hint.orderOut(nil)
@@ -383,7 +383,7 @@ final class Hub {
         }
         guard let current = drag else { return }
         drag = nil
-        guard current.moving, let target = target(at: flipped(NSEvent.mouseLocation), excluding: current.id),
+        guard current.moving, let target = target(at: flipped(NSEvent.mouseLocation), excluding: current.id, from: current.window.pid),
               let dropped = Member(current.window) else { return }
         // Let the app finish its own drag before the window is moved again.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
@@ -392,8 +392,10 @@ final class Hub {
     }
 
     /// What lies visibly under the pointer, ignoring the window being dragged: a group's tab bar or another
-    /// window's top edge.
-    private func target(at point: CGPoint, excluding dragged: CGWindowID) -> Target? {
+    /// window's top edge. A window of the program `from` belongs to is no target: browsers, the Finder and
+    /// terminals have tabs of their own up there, and dragging one of their tabs onto another of their
+    /// windows must stay theirs. Holding Shift docks anyway; a group's tab bar always takes the drop.
+    private func target(at point: CGPoint, excluding dragged: CGWindowID, from owner: pid_t? = nil) -> Target? {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
         for info in list {
@@ -413,6 +415,7 @@ final class Hub {
             // Only its top edge accepts a drop.
             guard point.y - frame.minY <= dropZone else { return nil }
             if let group = group(of: number) { return .group(group) }
+            if let owner, owner == pid, !NSEvent.modifierFlags.contains(.shift) { return nil }
             guard let window = AXUIElement.window(pid: pid, id: number), window.isStandardWindow,
                   let exact = window.frame else { return nil }
             return .window(window, exact)
@@ -507,6 +510,14 @@ final class Hub {
         }
         let next = group.members.firstIndex { $0.id == activeID } ?? min(index, group.members.count - 1)
         activate(group, next)
+    }
+
+    /// The minus in the bar: the shown window goes to the Dock and the bar hides with it. Clicking the
+    /// window in the Dock brings both back, see the regular check that follows minimized windows.
+    func minimize(_ group: TabGroup) {
+        guard group.members.indices.contains(group.active) else { return }
+        group.members[group.active].window.minimize()
+        group.panel.orderOut(nil)
     }
 
     /// Double click on the free part of the bar: fill the screen the group is on, or return to the size before.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+ xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+ xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+ IgnorableNamespaces="uap rescap">
+ <Identity Name="LakeCode.Dockodile" Publisher="CN=20D87924-737A-4FCD-AD7C-B9E15B0D6853" Version="0.4.1.0" ProcessorArchitecture="x64" />
+ <Properties>
+  <DisplayName>Dockodile</DisplayName><PublisherDisplayName>Lake Code</PublisherDisplayName>
+  <Description>Fenster verschiedener Windows-Programme in einer gemeinsamen Tab-Leiste gruppieren.</Description>
+  <Logo>Assets\StoreLogo.png</Logo>
+ </Properties>
+ <Resources><Resource Language="de-de"/><Resource Language="en-us"/></Resources>
+ <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0"/></Dependencies>
+ <Applications>
+  <Application Id="Dockodile" Executable="Dockodile.exe" EntryPoint="Windows.FullTrustApplication">
+   <uap:VisualElements DisplayName="Dockodile" Description="Tabs für alle Programme" BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png"/>
+   <Extensions><uap:Extension Category="windows.protocol"><uap:Protocol Name="dockodile"><uap:DisplayName>Dockodile</uap:DisplayName></uap:Protocol></uap:Extension></Extensions>
+  </Application>
+ </Applications>
+ <Capabilities><rescap:Capability Name="runFullTrust"/></Capabilities>
+</Package>

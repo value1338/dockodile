@@ -4,14 +4,14 @@
 
 # Dockodile
 
-**Tabs für alle Programme auf dem Mac.**
+**Tabs für Programme auf Mac und Windows.**
 
 Dockodile heftet Fenster verschiedener Programme zusammen.<br>
 Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser.
 
 *Dockodile groups windows of different apps behind one shared tab bar, like browser tabs for your whole desktop.*
 
-**[Website](https://dockodile.de)** · **[Fertige App laden](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
+**[Website](https://dockodile.de)** · **[Beta-Zugang anfragen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
 
 <br>
 
@@ -42,22 +42,24 @@ Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser
 - **Sicher bei wechselnden Bildschirmen.** Ist der Monitor von damals nicht mehr angeschlossen, öffnet sich ein Paket sichtbar auf dem Hauptbildschirm.
 - **Autostart.** Ein Schalter im Menü startet Dockodile beim Anmelden.
 
-Dockodile läuft als Symbol in der Menüleiste und hat kein Dock-Symbol. Die Oberfläche gibt es auf Deutsch und Englisch. Die Sprache wählst du beim ersten Start oder später im Menü unter „Sprache“.
+Auf dem Mac läuft Dockodile als Symbol in der Menüleiste und hat kein Dock-Symbol. Die Windows-Ausgabe läuft im Infobereich der Taskleiste. Ihre Bedienung und Grenzen stehen in [windows/ANLEITUNG.md](windows/ANLEITUNG.md). Die Oberfläche gibt es auf Deutsch und Englisch. Die Sprache wählst du beim ersten Start oder später im Menü unter „Sprache“.
 
 ## Fertig laden oder selbst bauen
 
 | | Fertige App | Selbst bauen |
 |---|---|---|
-| Preis | 7 € einmalig | kostenlos |
-| Was du bekommst | DMG, signiert und von Apple notarisiert, startet ohne Warnung | Quelltext aus diesem Repository, dieselben Funktionen |
-| Updates | direkt in der App | selbst neu bauen |
-| Windows | Version für Windows 11 im Kauf enthalten | nicht in diesem Repository |
+| Zugang | öffentlicher Verkauf derzeit pausiert, Beta-Zugang auf Anfrage | kostenlos |
+| Was du bekommst | notarisierten Mac-Download oder Windows-Ausgabe | Quelltext aus diesem Repository |
+| Updates | Website-Ausgabe nach einmaliger Freischaltung in der App; Store-Ausgabe über Microsoft | selbst neu bauen |
+| Systeme | macOS 14 oder neuer; Windows 11 (64 Bit) | Mac-Quelltext in `src/`, Windows-Quelltext in `windows/` |
 
-Der Preis deckt den Apple-Developer-Account, ohne den es keine signierte App gibt.
+Der bisherige Preis von 7 € unterstützt den Apple-Developer-Account sowie laufende Kosten für Server, Wartung und Support. Der öffentliche Verkauf bleibt während der Beta pausiert. Bestehende Käufe behalten ihren Update-Zugang.
 
-**[Dockodile auf dockodile.de laden](https://dockodile.de/#preis)**
+**[Beta-Zugang auf dockodile.de anfragen](https://dockodile.de/#preis)**
 
-### Kostenlos selbst bauen
+Aktueller Quellstand: **Mac 0.3.1 (Build 4)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
+
+### Mac kostenlos selbst bauen
 
 Der Quelltext ist frei. Wer will, baut Dockodile selbst, das kostet nichts und kann alles, was die gekaufte Version kann.
 
@@ -77,6 +79,22 @@ cd dockodile
 Beim ersten Lauf bietet das Skript an, ein eigenes Signaturzertifikat „Dockodile Lokal“ in deinem Anmelde-Schlüsselbund anzulegen. Sag ja, wenn du Dockodile öfter neu baust: macOS merkt sich den Bedienungshilfen-Zugriff anhand der Signatur, und ohne festes Zertifikat musst du ihn nach jedem Build neu erteilen. Das Zertifikat ist selbst signiert, gilt nur auf deinem Mac und wird nirgends hochgeladen. macOS fragt dafür einmal nach deinem Passwort. Sagst du nein, baut das Skript mit einer Wegwerf-Signatur und fragt nicht wieder.
 
 Beim ersten Start fragt Dockodile nach dem Zugriff **Bedienungshilfen**. Den vergibst du unter Systemeinstellungen, Datenschutz & Sicherheit, Bedienungshilfen. Dockodile merkt selbst, sobald er da ist.
+
+### Windows selbst bauen
+
+Im Verzeichnis `windows` mit installiertem Rust und den Windows-Buildwerkzeugen:
+
+```sh
+cargo build --release
+```
+
+Die Anleitung mit Funktionen, Systemgrenzen und Prüfschritten steht in [windows/ANLEITUNG.md](windows/ANLEITUNG.md). Für ein Store-Paket gibt es [windows/MSIX.md](windows/MSIX.md).
+
+### Mac-Updates
+
+Für Updates direkt in der App einmal den persönlichen Update-Link öffnen und **„In Dockodile freischalten“** wählen. Die App muss signiert sein und sich am Installationsort ersetzen lassen. Fehlt eine Voraussetzung, öffnet sie die Update-Seite.
+
+Beim manuellen Update die App beenden und die vorhandene `Dockodile.app` in Programme im Finder **ersetzen**. Nicht „Beide behalten“ wählen. Version 0.3.1 prüft vor dem automatischen Austausch Bundle-ID, Entwicklersignatur und Versionsnummer und ersetzt die bestehende Installation am selben Pfad.
 
 ## Bedienung
 

@@ -8,7 +8,13 @@ import Security
 @MainActor
 final class Updater {
     static let shared = Updater()
-    static let page = URL(string: "https://dockodile.de/update.html")!
+    static var page: URL {
+        var url = URLComponents(string: "https://dockodile.de/update.html")!
+        url.queryItems = [URLQueryItem(name: "os", value: "mac"),
+                          URLQueryItem(name: "from", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)]
+        if let expected = Updater.shared.available { url.queryItems?.append(URLQueryItem(name: "min_version", value: expected)) }
+        return url.url!
+    }
     private static let server = "https://dockodile.de"
 
     /// Newest version on the server, set only while it is newer than this app.
@@ -105,8 +111,8 @@ final class Updater {
             alert.addButton(withTitle: t("Jetzt installieren", "Install now"))
         } else {
             alert.informativeText = t(
-                "Du nutzt Version \(current). Auf der Update-Seite bekommst du die neue Version mit der E-Mail-Adresse deines Kaufs. Dort schaltest du auch die Installation direkt in der App frei.",
-                "You are using version \(current). The update page sends you the new version to the email address of your purchase. It also unlocks installing straight from the app.")
+                "Du nutzt Version \(current). Lade die neue DMG über die Update-Seite. Beende Dockodile und ersetze die vorhandene Dockodile.app in Programme. Wähle Ersetzen, nicht Beide behalten. Starte nur die ersetzte App aus Programme.",
+                "You are using version \(current). Download the new DMG from the update page. Quit Dockodile and replace the existing Dockodile.app in Applications. Choose Replace, not Keep Both. Launch only the replaced app from Applications.")
             alert.addButton(withTitle: t("Update-Seite öffnen", "Open update page"))
         }
         alert.addButton(withTitle: t("Später", "Later"))
@@ -142,20 +148,24 @@ final class Updater {
     // MARK: Installing
 
     private var canInstall: Bool {
-        let path = Bundle.main.bundlePath
+        let bundle = Bundle.main.bundleURL.resolvingSymlinksInPath()
+        let path = bundle.path
         let files = FileManager.default
-        // A copy started from the Downloads folder runs from a random read-only place. Nothing to replace there.
-        return token != nil && Updater.team(of: Bundle.main.bundleURL) != nil && !path.contains("/AppTranslocation/")
+        let parent = bundle.deletingLastPathComponent().path
+        let installFolders = ["/Applications", files.homeDirectoryForCurrentUser.appendingPathComponent("Applications").path]
+        // Never update a copy in Downloads, a mounted DMG or another temporary location.
+        return installFolders.contains(parent) && token != nil && Updater.team(of: Bundle.main.bundleURL) != nil && !path.contains("/AppTranslocation/")
             && files.isWritableFile(atPath: path) && files.isWritableFile(atPath: (path as NSString).deletingLastPathComponent)
     }
 
     private func install() {
-        guard !busy, let token, let team = Updater.team(of: Bundle.main.bundleURL) else { return }
+        guard !busy else { return }
+        guard canInstall, let expected = available, let token, let team = Updater.team(of: Bundle.main.bundleURL) else { failed(); return }
         busy = true
         var request = URLRequest(url: URL(string: Updater.server + "/api/app/update")!)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data("token=\(token)".utf8)
+        request.httpBody = Data("token=\(token)&platform=mac&current_version=\(current)&min_version=\(expected)".utf8)
         URLSession.shared.downloadTask(with: request) { file, response, _ in
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             // The downloaded file is removed when this closure returns, so it moves first.
@@ -168,7 +178,7 @@ final class Updater {
             DispatchQueue.main.async {
                 self.busy = false
                 if ready {
-                    self.swap(dmg, team: team)
+                    self.swap(dmg, team: team, expected: expected)
                 } else if status == 403 {
                     self.tell(t("Die Freischaltung gilt nicht mehr.", "The unlock key is no longer valid."),
                               t("Fordere auf der Update-Seite einen neuen Link an.", "Ask for a new link on the update page."))
@@ -180,7 +190,7 @@ final class Updater {
         }.resume()
     }
 
-    private func swap(_ dmg: URL, team: String) {
+    private func swap(_ dmg: URL, team: String, expected: String) {
         let files = FileManager.default
         let mount = files.temporaryDirectory.appendingPathComponent("Dockodile-Update-\(UUID().uuidString)")
         try? files.createDirectory(at: mount, withIntermediateDirectories: true)
@@ -192,24 +202,65 @@ final class Updater {
             return
         }
         let fresh = mount.appendingPathComponent("Dockodile.app")
-        // Only a build signed by the same developer may replace this app.
-        guard Updater.signed(fresh, by: team) else {
+        // A filename is not a version guarantee. Check the actual signed bundle, identity and version.
+        let freshBundle = Bundle(url: fresh)
+        let freshVersion = freshBundle?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        guard freshBundle?.bundleIdentifier == Bundle.main.bundleIdentifier,
+              freshVersion.range(of: "^[0-9]+(\\.[0-9]+)*$", options: .regularExpression) != nil,
+              freshVersion.compare(current, options: .numeric) == .orderedDescending,
+              freshVersion.compare(expected, options: .numeric) != .orderedAscending,
+              Updater.signed(fresh, by: team) else {
             _ = Updater.run("/usr/bin/hdiutil", ["detach", mount.path, "-quiet"])
             try? files.removeItem(at: dmg)
             failed()
             return
         }
-        // Waits for this process to end, swaps the bundle, puts the old one back if copying fails,
-        // and starts whatever is there afterwards.
+        // Prepare and verify a complete copy on the destination volume before stopping this app.
+        let target = Bundle.main.bundleURL.resolvingSymlinksInPath()
+        let parent = target.deletingLastPathComponent()
+        let staged = parent.appendingPathComponent(".Dockodile-update-\(UUID().uuidString).app")
+        let backup = parent.appendingPathComponent(".Dockodile-rollback-\(UUID().uuidString).app")
+        let copied = Updater.run("/usr/bin/ditto", [fresh.path, staged.path])
+        let stagedBundle = Bundle(url: staged)
+        let stagedVersion = stagedBundle?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let checked = copied && Updater.signed(staged, by: team)
+            && stagedBundle?.bundleIdentifier == Bundle.main.bundleIdentifier
+            && stagedVersion == freshVersion
+        _ = Updater.run("/usr/bin/hdiutil", ["detach", mount.path, "-quiet"])
+        try? files.removeItem(at: dmg)
+        try? files.removeItem(at: mount)
+        guard checked else {
+            try? files.removeItem(at: staged)
+            failed()
+            return
+        }
+        // Replace precisely the installed bundle. On failure restore that same path; no second app.
         let script = """
-        while kill -0 "$OLDPID" 2>/dev/null; do sleep 0.2; done
-        if mv "$TARGET" "$TARGET.alt"; then
-          if ditto "$FRESH" "$TARGET"; then rm -rf "$TARGET.alt"; else rm -rf "$TARGET"; mv "$TARGET.alt" "$TARGET"; fi
+        [ -d "$TARGET" ] && [ -d "$STAGED" ] && [ ! -e "$BACKUP" ] || exit 1
+        attempts=0
+        while kill -0 "$OLDPID" 2>/dev/null; do
+          attempts=$((attempts + 1))
+          if [ "$attempts" -ge 150 ]; then rm -rf "$STAGED"; exit 1; fi
+          sleep 0.2
+        done
+        if ! mv "$TARGET" "$BACKUP"; then
+          rm -rf "$STAGED"
+          open "$TARGET"
+          exit 1
         fi
-        hdiutil detach "$MOUNT" -quiet
-        rm -f "$DMG"
-        rmdir "$MOUNT" 2>/dev/null
-        open "$TARGET"
+        if ! mv "$STAGED" "$TARGET"; then
+          mv "$BACKUP" "$TARGET"
+          rm -rf "$STAGED"
+          open "$TARGET"
+          exit 1
+        fi
+        if ! open "$TARGET"; then
+          rm -rf "$TARGET"
+          mv "$BACKUP" "$TARGET"
+          open "$TARGET"
+          exit 1
+        fi
+        rm -rf "$BACKUP"
         """
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")
@@ -217,16 +268,14 @@ final class Updater {
         task.environment = [
             "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
             "OLDPID": String(ProcessInfo.processInfo.processIdentifier),
-            "TARGET": Bundle.main.bundlePath,
-            "FRESH": fresh.path,
-            "MOUNT": mount.path,
-            "DMG": dmg.path,
+            "TARGET": target.path,
+            "STAGED": staged.path,
+            "BACKUP": backup.path,
         ]
         do {
             try task.run()
         } catch {
-            _ = Updater.run("/usr/bin/hdiutil", ["detach", mount.path, "-quiet"])
-            try? files.removeItem(at: dmg)
+            try? files.removeItem(at: staged)
             failed()
             return
         }
@@ -234,9 +283,15 @@ final class Updater {
     }
 
     private func failed() {
-        tell(t("Das Update konnte nicht installiert werden.", "The update could not be installed."),
-             t("Dockodile läuft unverändert weiter. Über die Update-Seite kannst du die neue Version von Hand laden.",
-               "Dockodile keeps running unchanged. You can download the new version by hand from the update page."))
+        let alert = NSAlert()
+        alert.messageText = t("Das Update konnte nicht installiert werden.", "The update could not be installed.")
+        alert.informativeText = t(
+            "Dockodile läuft unverändert weiter. Lade die neue DMG über die Update-Seite. Beende Dockodile und ersetze die vorhandene Dockodile.app im Ordner Programme. Wähle im Finder Ersetzen, nicht Beide behalten. Starte danach die App aus Programme, nicht aus dem Download oder der DMG.",
+            "Dockodile keeps running unchanged. Download the new DMG from the update page. Quit Dockodile and replace the existing Dockodile.app in Applications. In Finder choose Replace, not Keep Both. Then launch the app from Applications, not Downloads or the DMG.")
+        alert.addButton(withTitle: t("Neu herunterladen", "Download again"))
+        alert.addButton(withTitle: t("Später", "Later"))
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(Updater.page) }
     }
 
     private func tell(_ title: String, _ text: String) {

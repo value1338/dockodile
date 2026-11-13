@@ -119,7 +119,7 @@ struct TabBar: View {
     var body: some View {
         GeometryReader { geometry in
             let count = max(1, group.members.count + group.starting.count)
-            let width = min(230, (geometry.size.width - 12 - 34 - 34) / CGFloat(count))
+            let width = min(230, (geometry.size.width - 12 - 34 - 34 - 50) / CGFloat(count))
             HStack(spacing: 0) {
                 ForEach(Array(group.members.enumerated()), id: \.element.id) { index, member in
                     ForEach(group.starting.filter { $0.at == index }) { GhostCell(ghost: $0, width: width) }
@@ -131,6 +131,13 @@ struct TabBar: View {
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { Hub.shared.zoom(group) }
+                BarButton(symbol: "minus", label: t("Gruppe minimieren", "Minimize group")) {
+                    Hub.shared.minimize(group)
+                }
+                BarButton(symbol: "arrow.up.left.and.arrow.down.right",
+                          label: t("Bildschirm füllen oder alte Größe", "Fill screen or restore size")) {
+                    Hub.shared.zoom(group)
+                }
                 CloseButton(group: group)
             }
             .padding(.horizontal, 6)
@@ -416,6 +423,29 @@ private struct ResizeCorner: View {
 }
 
 /// The X at the right end of the bar closes the whole group, after asking how.
+/// A small round button at the right end of the bar, beside the close button.
+private struct BarButton: View {
+    let symbol: String
+    let label: String
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 25, height: 25)
+                .background(Color.primary.opacity(hovering ? 0.12 : 0), in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
 private struct CloseButton: View {
     let group: TabGroup
     @State private var hovering = false

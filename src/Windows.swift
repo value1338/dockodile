@@ -88,6 +88,11 @@ extension AXUIElement {
         AXUIElementSetAttributeValue(self, kAXPositionAttribute as CFString, position)
     }
 
+    /// Sends the window to the Dock, the same as its yellow button.
+    func minimize() {
+        AXUIElementSetAttributeValue(self, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+    }
+
     /// Brings this window to the front, and its app with it.
     func focus() {
         AXUIElementSetAttributeValue(self, kAXMainAttribute as CFString, kCFBooleanTrue)
