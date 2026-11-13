@@ -11,7 +11,7 @@ Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser
 
 *Dockodile groups windows of different apps behind one shared tab bar, like browser tabs for your whole desktop.*
 
-**[Website](https://dockodile.de)** · **[Beta-Zugang anfragen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
+**[Website](https://dockodile.de)** · **[Fertige App kaufen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
 
 <br>
 
@@ -48,14 +48,14 @@ Auf dem Mac läuft Dockodile als Symbol in der Menüleiste und hat kein Dock-Sym
 
 | | Fertige App | Selbst bauen |
 |---|---|---|
-| Zugang | öffentlicher Verkauf derzeit pausiert, Beta-Zugang auf Anfrage | kostenlos |
+| Preis | 7 € einmalig | kostenlos |
 | Was du bekommst | notarisierten Mac-Download oder Windows-Ausgabe | Quelltext aus diesem Repository |
 | Updates | Website-Ausgabe nach einmaliger Freischaltung in der App; Store-Ausgabe über Microsoft | selbst neu bauen |
 | Systeme | macOS 14 oder neuer; Windows 11 (64 Bit) | Mac-Quelltext in `src/`, Windows-Quelltext in `windows/` |
 
-Der bisherige Preis von 7 € unterstützt den Apple-Developer-Account sowie laufende Kosten für Server, Wartung und Support. Der öffentliche Verkauf bleibt während der Beta pausiert. Bestehende Käufe behalten ihren Update-Zugang.
+Der einmalige Preis von 7 € unterstützt den Apple-Developer-Account sowie laufende Kosten für Server, Wartung und Support. Der Kauf gilt für Mac und Windows und enthält spätere Versionen.
 
-**[Beta-Zugang auf dockodile.de anfragen](https://dockodile.de/#preis)**
+**[Dockodile auf dockodile.de kaufen](https://dockodile.de/#preis)**
 
 Aktueller Quellstand: **Mac 0.3.2 (Build 5)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
 
