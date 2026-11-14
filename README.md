@@ -11,7 +11,7 @@ Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser
 
 *Dockodile groups windows of different apps behind one shared tab bar, like browser tabs for your whole desktop.*
 
-**[Website](https://dockodile.de)** · **[Windows im Microsoft Store](https://apps.microsoft.com/detail/9PCW0202S2HC?hl=de-DE&gl=DE)** · **[Fertige App kaufen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
+**[Website](https://dockodile.de)** · **[Windows im Microsoft Store](https://apps.microsoft.com/detail/9PCW0202S2HC?hl=de-DE&gl=DE)** · **[Kostenlos herunterladen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
 
 <br>
 
@@ -48,20 +48,22 @@ Auf dem Mac läuft Dockodile als Symbol in der Menüleiste und hat kein Dock-Sym
 
 | | Fertige App | Selbst bauen |
 |---|---|---|
-| Preis | 7 € einmalig | kostenlos |
+| Preis | kostenlos | kostenlos |
 | Was du bekommst | notarisierten Mac-Download oder Windows-Ausgabe | Quelltext aus diesem Repository |
-| Updates | Website-Ausgabe nach einmaliger Freischaltung in der App; Store-Ausgabe über Microsoft | selbst neu bauen |
+| Updates | kostenlos; Store-Ausgabe über Microsoft | selbst neu bauen |
 | Systeme | macOS 14 oder neuer; Windows 11 (64 Bit) | Mac-Quelltext in `src/`, Windows-Quelltext in `windows/` |
 
-Der einmalige Preis von 7 € unterstützt den Apple-Developer-Account sowie laufende Kosten für Server, Wartung und Support. Der Kauf gilt für Mac und Windows und enthält spätere Versionen.
+Dockodile ist für Mac und Windows kostenlos. Für Downloads und Updates sind weder Konto, E-Mail-Adresse noch Kaufnachweis erforderlich.
 
-**[Dockodile auf dockodile.de kaufen](https://dockodile.de/#preis)**
+Wenn dir mein Projekt gefällt, freue ich mich über einen [Kaffee oder einen freiwilligen Beitrag](https://buymeacoffee.com/riccardolakecode). Damit unterstützt du die Weiterentwicklung sowie Serverbetrieb, Wartung, Support und den Apple-Developer-Account. Die Unterstützung ist freiwillig; Download und Updates bleiben auch ohne Beitrag kostenlos.
+
+**[Dockodile kostenlos herunterladen](https://dockodile.de/#preis)**
 
 Aktueller Quellstand: **Mac 0.3.2 (Build 5)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
 
 ### Mac kostenlos selbst bauen
 
-Der Quelltext ist frei. Wer will, baut Dockodile selbst, das kostet nichts und kann alles, was die gekaufte Version kann.
+Der Quelltext ist frei. Wer will, baut Dockodile selbst, das kostet nichts und kann alles, was die fertige Version kann.
 
 Voraussetzungen:
 
@@ -92,7 +94,7 @@ Die Anleitung mit Funktionen, Systemgrenzen und Prüfschritten steht in [windows
 
 ### Mac-Updates
 
-Für Updates direkt in der App einmal den persönlichen Update-Link öffnen und **„In Dockodile freischalten“** wählen. Die App muss signiert sein und sich am Installationsort ersetzen lassen. Fehlt eine Voraussetzung, öffnet sie die Update-Seite.
+Die [Update-Seite](https://dockodile.de/update.html) bietet Downloads ohne E-Mail oder Kaufnachweis. Bereits veröffentlichte App-Versionen erwarten noch eine lokale Freischaltung: Der dortige Kompatibilitätsknopf **„Updates in Dockodile aktivieren“** setzt sie ohne Kauf. Die App muss signiert sein und sich am Installationsort ersetzen lassen. Alternativ ist jederzeit ein manueller Download möglich.
 
 Beim manuellen Update die App beenden und die vorhandene `Dockodile.app` in Programme im Finder **ersetzen**. Nicht „Beide behalten“ wählen. Version 0.3.1 prüft vor dem automatischen Austausch Bundle-ID, Entwicklersignatur und Versionsnummer und ersetzt die bestehende Installation am selben Pfad.
 

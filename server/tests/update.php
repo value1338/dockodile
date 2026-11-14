@@ -48,3 +48,12 @@ check((int)$db->query("SELECT count(*) FROM invoices i JOIN orders o ON o.id=i.o
 $c->config['mail_enabled']=true;$c->exec('UPDATE download_tokens SET expires_at=? WHERE token_hash=?',['2025-01-01 00:00:00',hash('sha256',$t2)]);
 $shop->update('b@example.invalid','0.2.1',$send);check(str_contains(end($sent)[1],$t2),'Voucher holder gets update links by mail');
 echo "ALL UPDATE TESTS PASSED\n";
+
+// A pending purchase must not be captured after the app becomes free.
+$freeId=str_repeat('f',32);
+$c->exec('INSERT INTO orders(id,owner_hash,paypal_order_id,status,amount,currency,buyer_json,consent_text,consent_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)',[$freeId,hash('sha256','free-owner'),'PPFREE','created',700,'EUR',json_encode($buyer),'consent',Core::now(),Core::now()]);
+$c->config['free_downloads']=true;$captureCalls=0;
+$freePayPal=new PayPal($c->config,function($method,$path)use(&$captureCalls){if($method==='POST'&&str_ends_with($path,'/capture'))$captureCalls++;return ['status'=>'APPROVED'];});
+$freeShop=new Shop($c,$freePayPal);
+denied(fn()=>$freeShop->capture($freeId,null),'Pending purchase rejected after free release');
+check($captureCalls===0,'No PayPal capture after free release');

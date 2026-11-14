@@ -33,6 +33,7 @@ final class Shop {
    if($o['status']==='paid'){$this->confirmation->send($id);return $c->receipt($id);}
    if($o['status']==='refunded')throw new DomainException('Die Zahlung wurde erstattet.',410);
    $path='/v2/checkout/orders/'.$o['paypal_order_id'];$r=$this->paypal->request('GET',$path);
+   if(!empty($c->config['free_downloads'])&&($r['status']??'')==='APPROVED')throw new DomainException('Dockodile ist kostenlos. Es wird keine Zahlung eingezogen.',409);
    if(($r['status']??'')==='APPROVED'){$this->paypal->request('POST',$path.'/capture',null,md5('capture:'.$id));$r=$this->paypal->request('GET',$path);}
    $c->paid($id,$r);$this->confirmation->send($id);return $c->receipt($id);
   });
