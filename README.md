@@ -11,7 +11,7 @@ Mail, Kalender und Chat teilen sich dann eine Tab-Leiste, so wie Tabs im Browser
 
 *Dockodile groups windows of different apps behind one shared tab bar, like browser tabs for your whole desktop.*
 
-**[Website](https://dockodile.de)** · **[Fertige App kaufen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
+**[Website](https://dockodile.de)** · **[Windows im Microsoft Store](https://apps.microsoft.com/detail/9PCW0202S2HC?hl=de-DE&gl=DE)** · **[Fertige App kaufen](https://dockodile.de/#preis)** · **[Selbst bauen](#kostenlos-selbst-bauen)** · **[☕ Kaffee spendieren](https://buymeacoffee.com/riccardolakecode)**
 
 <br>
 
