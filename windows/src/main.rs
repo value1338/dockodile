@@ -31,7 +31,7 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
 use windows_sys::Win32::UI::Shell::*;
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
-const VERSION: &str = "0.4.1";
+const VERSION: &str = "0.4.2";
 const WM_TRAY: u32 = WM_APP + 1;
 const WM_URL: u32 = WM_APP + 2;
 const WM_MOUSELEAVE: u32 = 0x02A3;
@@ -2376,7 +2376,7 @@ unsafe fn launch_step() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Updates: version check, download with the key of the purchase, swapping the program file
+// Free updates: version check, download, and replacement of the program file
 // ---------------------------------------------------------------------------------------------
 
 const SERVER: &str = "dockodile.de";
@@ -2484,13 +2484,10 @@ fn own_dir() -> std::path::PathBuf {
     exe.parent().map(|p| p.to_path_buf()).unwrap_or_default()
 }
 
-/// Updates install only with the key of a purchase and where the program file may be replaced.
+/// Updates install only where the program file may be replaced.
 /// In "Programme" (Program Files) that needs administrator rights: then the update page helps.
 fn can_install() -> bool {
     if cfg!(feature = "microsoft-store") { return false; }
-    if app().store.token.is_none() {
-        return false;
-    }
     let probe = own_dir().join("dockodile.write-test");
     let ok = std::fs::write(&probe, b"x").is_ok();
     let _ = std::fs::remove_file(&probe);
@@ -2590,8 +2587,8 @@ unsafe fn offer_update() {
     let text = match (direct, EN) {
         (true, false) => format!("Dockodile {version} ist da. Du nutzt Version {VERSION}.\n\nDockodile lädt das Update, ersetzt sich selbst und startet neu. Offene Gruppen werden dabei aufgelöst.\n\nJetzt installieren?"),
         (true, true) => format!("Dockodile {version} is available. You are using version {VERSION}.\n\nDockodile downloads the update, replaces itself and starts again. Open groups are dissolved.\n\nInstall now?"),
-        (false, false) => format!("Dockodile {version} ist da. Du nutzt Version {VERSION}.\n\nAuf der Update-Seite bekommst du die neue Version mit der E-Mail-Adresse deines Kaufs. Dort schaltest du auch die Installation direkt in der App frei.\n\nUpdate-Seite öffnen?"),
-        (false, true) => format!("Dockodile {version} is available. You are using version {VERSION}.\n\nThe update page sends you the new version to the email address of your purchase. It also unlocks installing straight from the app.\n\nOpen the update page?"),
+        (false, false) => format!("Dockodile {version} ist da. Du nutzt Version {VERSION}.\n\nDas Programm kann sich an diesem Speicherort nicht selbst ersetzen. Lade die neue Version kostenlos herunter und ersetze die vorhandene Datei.\n\nUpdate-Seite öffnen?"),
+        (false, true) => format!("Dockodile {version} is available. You are using version {VERSION}.\n\nThe program cannot replace itself at this location. Download the new version for free and replace the existing file.\n\nOpen the update page?"),
     };
     if message(&text, MB_YESNO | MB_ICONQUESTION) != IDYES {
         return;
@@ -2610,7 +2607,8 @@ unsafe fn open_url(url: &str) {
 unsafe fn install_update() {
     if cfg!(feature = "microsoft-store") { return; }
     let a = app();
-    let Some(token) = a.store.token.clone() else { return };
+    if !can_install() { open_url(UPDATE_PAGE); return; }
+    let Some(expected) = a.available.clone() else { return };
     if a.updating {
         return;
     }
@@ -2619,14 +2617,14 @@ unsafe fn install_update() {
     let target = own_dir().join("dockodile.new.exe");
     log!("update: downloading");
     std::thread::spawn(move || {
-        let result = match http("POST", "/api/app/update", Some(&format!("token={token}&platform=windows")), 64 << 20) {
+        let result = match http("POST", "/api/app/update", Some(&format!("platform=windows&current_version={VERSION}&min_version={expected}")), 64 << 20) {
             // An unsigned program can only be checked for its shape; HTTPS vouches for the origin.
             Ok((200, body)) if body.len() > 100_000 && body.starts_with(b"MZ") => {
                 std::fs::write(&target, &body).map(|_| target).map_err(|e| e.to_string())
             }
             Ok((403, _)) => Err(tr(
-                "Zu diesem Schlüssel gibt es keinen gültigen Kauf. Hol dir auf der Update-Seite einen neuen Link.",
-                "There is no valid purchase for this key. Get a new link on the update page.",
+                "Der Download wurde abgelehnt. Lade die neue Version über die Update-Seite herunter.",
+                "The download was refused. Download the new version from the update page.",
             )
             .to_string()),
             Ok((code, _)) => Err(format!("{} ({code})", tr("Der Server hat das Update nicht geliefert", "The server did not deliver the update"))),
@@ -2669,32 +2667,10 @@ unsafe fn update_downloaded(result: Result<std::path::PathBuf, String>) {
     DestroyWindow(app().msg);
 }
 
-unsafe fn activate(token: String) {
+unsafe fn activate(_token: String) {
+    // Compatibility with links from older releases; no licence is stored or required.
     if cfg!(feature = "microsoft-store") { return; }
-    let a = app();
-    if let Some(old) = &a.store.token {
-        if *old == token {
-            notify(tr("Updates sind freigeschaltet.", "Updates are unlocked."), "");
-            return;
-        }
-        // Any web page can open this link, so an existing key is never replaced silently.
-        let ask = tr(
-            "Dockodile ist schon für Updates freigeschaltet. Ersetze den Schlüssel nur, wenn du den Link selbst gerade angefordert hast.\n\nErsetzen?",
-            "Dockodile is already unlocked for updates. Replace the key only if you just asked for this link yourself.\n\nReplace?",
-        );
-        if message(ask, MB_YESNO | MB_ICONQUESTION) != IDYES {
-            return;
-        }
-    }
-    a.store.token = Some(token);
-    a.store.tried = None;
-    save_store();
-    log!("update: unlocked");
-    notify(
-        tr("Updates sind freigeschaltet.", "Updates are unlocked."),
-        tr("Dockodile lädt neue Versionen ab jetzt selbst.", "From now on Dockodile downloads new versions itself."),
-    );
-    check_update(false);
+    check_update(true);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -2896,14 +2872,16 @@ unsafe fn tray_menu() {
     } else {
     let updates = CreatePopupMenu();
     if let Some(v) = &a.available {
-        let label = if EN { format!("Install version {v} …") } else { format!("Version {v} installieren …") };
+        let label = match (can_install(), EN) {
+            (true, true) => format!("Install version {v} …"),
+            (true, false) => format!("Version {v} installieren …"),
+            (false, true) => format!("Download version {v} …"),
+            (false, false) => format!("Version {v} herunterladen …"),
+        };
         add(updates, MF_STRING, 6, &label);
     }
     add(updates, MF_STRING | if a.updating { MF_GRAYED } else { 0 }, 7, tr("Nach Updates suchen", "Check for updates"));
     add(updates, MF_STRING | if a.store.manual_updates { 0 } else { MF_CHECKED }, 8, tr("Automatisch aktualisieren", "Update automatically"));
-    if a.store.token.is_none() {
-        add(updates, MF_STRING, 10, tr("Updates freischalten …", "Unlock updates …"));
-    }
     let updates_label = match &a.available {
         Some(v) if EN => format!("Updates (version {v} is available)"),
         Some(v) => format!("Updates (Version {v} ist da)"),

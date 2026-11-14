@@ -59,7 +59,7 @@ Wenn dir mein Projekt gefällt, freue ich mich über einen [Kaffee oder einen fr
 
 **[Dockodile kostenlos herunterladen](https://dockodile.de/#preis)**
 
-Aktueller Quellstand: **Mac 0.3.2 (Build 5)** und **Windows 0.4.1**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der neue Windows-Store-Build ist zur Zertifizierung eingereicht.
+Aktueller Quellstand: **Mac 0.3.3 (Build 6)** und **Windows 0.4.2**. Die Versionsnummern werden für beide Systeme getrennt geführt. Der Mac-Export benötigt noch Signatur und Notarisierung; bis zur Veröffentlichung bleibt der geprüfte Download 0.3.2 verfügbar. Der eingereichte Windows-Store-Build hat Version 0.4.1.
 
 ### Mac kostenlos selbst bauen
 
@@ -94,7 +94,7 @@ Die Anleitung mit Funktionen, Systemgrenzen und Prüfschritten steht in [windows
 
 ### Mac-Updates
 
-Die [Update-Seite](https://dockodile.de/update.html) bietet Downloads ohne E-Mail oder Kaufnachweis. Bereits veröffentlichte App-Versionen erwarten noch eine lokale Freischaltung: Der dortige Kompatibilitätsknopf **„Updates in Dockodile aktivieren“** setzt sie ohne Kauf. Die App muss signiert sein und sich am Installationsort ersetzen lassen. Alternativ ist jederzeit ein manueller Download möglich.
+Die [Update-Seite](https://dockodile.de/update.html) bietet Downloads ohne E-Mail oder Kaufnachweis. Mac-Versionen bis 0.3.2 und direkte Windows-Versionen bis 0.4.1 erwarten noch eine lokale Freischaltung: Der dortige Kompatibilitätsknopf **„Updates in Dockodile aktivieren“** setzt sie ohne Kauf. Die App muss signiert sein und sich am Installationsort ersetzen lassen. Ab Mac 0.3.3 und Windows 0.4.2 entfällt diese Freischaltung vollständig. Die Store-Ausgabe erhält Updates über Microsoft. Alternativ ist jederzeit ein manueller Download möglich.
 
 Beim manuellen Update die App beenden und die vorhandene `Dockodile.app` in Programme im Finder **ersetzen**. Nicht „Beide behalten“ wählen. Version 0.3.1 prüft vor dem automatischen Austausch Bundle-ID, Entwicklersignatur und Versionsnummer und ersetzt die bestehende Installation am selben Pfad.
 
@@ -157,7 +157,7 @@ Die Tab-Leiste ist für Bedienungshilfen ausgezeichnet. Jeder Tab ist ein benann
 <br>
 
 - **Bedienungshilfen.** Ohne diesen Zugriff darf keine App fremde Fenster bewegen. Dockodile nutzt ihn ausschließlich dafür: Fenster finden, verschieben, in der Größe ändern, nach vorn holen.
-- **Netzwerk nur für Updates.** Dockodile fragt beim Start und einmal am Tag bei dockodile.de nach der neuesten Versionsnummer, ohne Kennung. „Automatisch aktualisieren“ im Menü schaltet das ab. Wer gekauft hat, schaltet mit dem Link von [dockodile.de/update.html](https://dockodile.de/update.html) die Installation direkt in der App frei; dann sendet die App beim Laden einer neuen Version den Schlüssel des Kaufs. Fenster, Programme und Pakete verlassen den Mac nicht.
+- **Netzwerk nur für Updates.** Dockodile fragt beim Start und einmal am Tag bei dockodile.de nach der neuesten Versionsnummer, ohne Kennung. „Automatisch aktualisieren“ im Menü schaltet das ab. Die Installation direkt in der App benötigt ab Mac 0.3.3 keinen Schlüssel. Ältere Ausgaben können über den kostenlosen Kompatibilitätsknopf auf [dockodile.de/update.html](https://dockodile.de/update.html) aktualisieren. Fenster, Programme und Pakete verlassen den Mac nicht.
 - **Gespeichert wird lokal.** Pakete liegen in den Einstellungen der App auf deinem Mac: Programmkennung, Programmpfad, Fenstertitel zum Wiedererkennen und der Rahmen der Gruppe.
 
 </details>

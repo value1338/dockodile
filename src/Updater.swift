@@ -1,10 +1,8 @@
 import AppKit
 import Security
 
-/// Updates for buyers. The app asks dockodile.de for the newest version number. With the key of
-/// the purchase, stored through `dockodile://activate?token=…`, it downloads the DMG itself, checks
-/// that it carries the same Developer ID as the running app, swaps the bundle and starts again.
-/// Self-built copies have no Developer ID and no key: they are sent to the update page instead.
+/// Free updates from dockodile.de. The downloaded app must carry the same Developer ID,
+/// bundle identity and a newer version before it replaces the installed copy.
 @MainActor
 final class Updater {
     static let shared = Updater()
@@ -34,9 +32,6 @@ final class Updater {
             schedule()
         }
     }
-
-    private var token: String? { UserDefaults.standard.string(forKey: "updateToken") }
-    var activated: Bool { token != nil }
 
     func start() { schedule() }
 
@@ -98,6 +93,13 @@ final class Updater {
         offer()
     }
 
+    var updateMenuTitle: String? {
+        guard let version = available else { return nil }
+        return canInstall
+            ? t("Update auf \(version) installieren …", "Install update \(version) …")
+            : t("Version \(version) herunterladen …", "Download version \(version) …")
+    }
+
     /// The update dialog. Also behind the menu item.
     func offer() {
         guard let version = available else { return }
@@ -121,27 +123,10 @@ final class Updater {
         if direct { install() } else { NSWorkspace.shared.open(Updater.page) }
     }
 
-    // MARK: Key of the purchase
-
-    /// `dockodile://activate?token=…` from the purchase page or the update mail.
+    // Older download pages still use this URL action. It now only starts a manual check.
     func activate(_ token: String) -> Bool {
         guard token.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil else { return false }
-        if let old = self.token, old != token {
-            // Any web page can open this link, so an existing key is never replaced silently.
-            let alert = NSAlert()
-            alert.messageText = t("Freischaltung ersetzen?", "Replace the unlock key?")
-            alert.informativeText = t(
-                "Dockodile ist schon für Updates freigeschaltet. Ersetze den Schlüssel nur, wenn du den Link selbst gerade angefordert hast.",
-                "Dockodile is already unlocked for updates. Replace the key only if you just asked for this link yourself.")
-            alert.addButton(withTitle: t("Ersetzen", "Replace"))
-            alert.addButton(withTitle: t("Abbrechen", "Cancel"))
-            NSApp.activate(ignoringOtherApps: true)
-            guard alert.runModal() == .alertFirstButtonReturn else { return true }
-        }
-        UserDefaults.standard.set(token, forKey: "updateToken")
-        tell(t("Updates sind freigeschaltet.", "Updates are unlocked."),
-             t("Dockodile lädt neue Versionen ab jetzt selbst.", "From now on Dockodile downloads new versions itself."))
-        check(manual: false)
+        check(manual: true)
         return true
     }
 
@@ -154,18 +139,18 @@ final class Updater {
         let parent = bundle.deletingLastPathComponent().path
         let installFolders = ["/Applications", files.homeDirectoryForCurrentUser.appendingPathComponent("Applications").path]
         // Never update a copy in Downloads, a mounted DMG or another temporary location.
-        return installFolders.contains(parent) && token != nil && Updater.team(of: Bundle.main.bundleURL) != nil && !path.contains("/AppTranslocation/")
+        return installFolders.contains(parent) && Updater.team(of: Bundle.main.bundleURL) != nil && !path.contains("/AppTranslocation/")
             && files.isWritableFile(atPath: path) && files.isWritableFile(atPath: (path as NSString).deletingLastPathComponent)
     }
 
     private func install() {
         guard !busy else { return }
-        guard canInstall, let expected = available, let token, let team = Updater.team(of: Bundle.main.bundleURL) else { failed(); return }
+        guard canInstall, let expected = available, let team = Updater.team(of: Bundle.main.bundleURL) else { failed(); return }
         busy = true
         var request = URLRequest(url: URL(string: Updater.server + "/api/app/update")!)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data("token=\(token)&platform=mac&current_version=\(current)&min_version=\(expected)".utf8)
+        request.httpBody = Data("platform=mac&current_version=\(current)&min_version=\(expected)".utf8)
         URLSession.shared.downloadTask(with: request) { file, response, _ in
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             // The downloaded file is removed when this closure returns, so it moves first.
@@ -179,10 +164,6 @@ final class Updater {
                 self.busy = false
                 if ready {
                     self.swap(dmg, team: team, expected: expected)
-                } else if status == 403 {
-                    self.tell(t("Die Freischaltung gilt nicht mehr.", "The unlock key is no longer valid."),
-                              t("Fordere auf der Update-Seite einen neuen Link an.", "Ask for a new link on the update page."))
-                    NSWorkspace.shared.open(Updater.page)
                 } else {
                     self.failed()
                 }

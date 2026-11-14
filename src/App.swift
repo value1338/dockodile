@@ -204,15 +204,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(.separator())
         add("Dockodile " + Updater.shared.current, nil, in: menu)
-        if let version = Updater.shared.available {
-            add(t("Update auf \(version) installieren …", "Install update \(version) …"), #selector(installUpdate), in: menu)
+        if let title = Updater.shared.updateMenuTitle {
+            add(title, #selector(installUpdate), in: menu)
         }
         add(t("Nach Updates suchen …", "Check for updates …"), #selector(checkUpdates), in: menu)
         add(t("Automatisch aktualisieren", "Update automatically"), #selector(toggleUpdates), in: menu).state =
             Updater.shared.automatic ? .on : .off
-        if !Updater.shared.activated {
-            add(t("Updates freischalten …", "Unlock updates …"), #selector(openUpdatePage), in: menu)
-        }
         menu.addItem(.separator())
         add(t("Dockodile beenden", "Quit Dockodile"), #selector(quit), in: menu)
     }
