@@ -59,7 +59,7 @@ Wenn dir mein Projekt gefällt, freue ich mich über einen [Kaffee oder einen fr
 
 **[Dockodile kostenlos herunterladen](https://dockodile.de/#preis)**
 
-Aktueller Quellstand: **Mac 0.3.3 (Build 6)** und **Windows 0.4.2**. Die Versionsnummern werden für beide Systeme getrennt geführt. Mac 0.3.3 ist signiert, notarisiert und als Universal-Download für Apple Silicon und Intel veröffentlicht. Der eingereichte Windows-Store-Build hat Version 0.4.1.
+Aktueller Quellstand: **Mac 0.3.3 (Build 6)** und **Windows 0.4.2**. Die Versionsnummern werden für beide Systeme getrennt geführt. Mac 0.3.3 ist signiert, notarisiert und als Universal-Download für Apple Silicon und Intel veröffentlicht. Windows 0.4.2 ist zur Store-Zertifizierung eingereicht; die Veröffentlichung erfolgt nach erfolgreicher Prüfung automatisch.
 
 ### Mac kostenlos selbst bauen
 
